@@ -19,6 +19,8 @@ package buildversion
 import (
 	"fmt"
 	"runtime/debug"
+
+	"github.com/blang/semver"
 )
 
 const DefaultVersion = "0.0.0-dev"
@@ -45,6 +47,16 @@ func init() {
 	info, available := debug.ReadBuildInfo()
 	// info.Main.Version will be "" when debugging, and "(devel)" when building with no arguments
 	if available && info.Main.Version != "" && info.Main.Version != "(devel)" && BuildTime == "" && BuildCommit == "" && BuildVersion == DefaultVersion {
+		version := info.Main.Version
+		if version[0] == 'v' {
+			// Normalize version tags in the form v1.1.1 to 1.1.1
+			version = version[1:]
+		}
+		// Ensure that version tag can be parsed correctly
+		_, err := semver.Parse(version)
+		if err != nil {
+			return
+		}
 		BuildVersion = info.Main.Version
 		BuildCommit = fmt.Sprintf("(unknown, mod sum: %q)", info.Main.Sum)
 		BuildTime = "(unknown)"
